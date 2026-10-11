@@ -157,3 +157,65 @@ def _softmax(values: np.ndarray) -> np.ndarray:
     shifted = values - values.max()
     exp_values = np.exp(shifted)
     return exp_values / exp_values.sum()
+
+
+def generate_catalog_dataset(
+    n_users: int = 36,
+    n_items: int = 60,
+    interactions_per_user: int = 14,
+    seed: int = 42,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """Create content-aligned histories for the advanced, still synthetic lab.
+
+    All item metadata is known before interactions. The final catalog item has
+    no interactions, making item cold-start observable. Histories are interleaved
+    in time, with a preference for staying in the recently viewed genre. Each
+    user rates an item at most once, so held-out positives remain recommendable.
+    This deliberately simple world is not evidence about real-world accuracy.
+    """
+
+    if n_users < 1 or n_items < 6 or not 3 <= interactions_per_user < n_items:
+        raise ValueError("need users >= 1, items >= 6, and 3 <= history length < items")
+    rng = np.random.default_rng(seed)
+    genres = ["Adventure", "Comedy", "Mystery", "Documentary"]
+    keywords = ["冒険 宇宙 旅", "笑い 日常 友情", "謎 探偵 事件", "自然 科学 記録"]
+    moods = ["穏やか", "刺激的", "感動"]
+    item_genres = np.arange(n_items) % len(genres)
+    items = pd.DataFrame(
+        {
+            "item_id": [f"i{idx + 1:03d}" for idx in range(n_items)],
+            "title": [f"{genres[genre]} {idx + 1:03d}" for idx, genre in enumerate(item_genres)],
+            "genre": [genres[genre] for genre in item_genres],
+            "description": [
+                f"{keywords[genre]} {moods[idx % len(moods)]}"
+                for idx, genre in enumerate(item_genres)
+            ],
+        }
+    )
+    favorite_genres = rng.integers(0, len(genres), size=n_users)
+    users = pd.DataFrame({
+        "user_id": [f"u{idx + 1:03d}" for idx in range(n_users)],
+        "favorite_genre": [genres[genre] for genre in favorite_genres],
+    })
+    rows = []
+    for user_pos, user_id in enumerate(users["user_id"]):
+        available = list(range(n_items - 1))
+        last_genre = int(favorite_genres[user_pos])
+        for step in range(interactions_per_user):
+            candidate_genres = item_genres[available]
+            taste = np.where(candidate_genres == favorite_genres[user_pos], 2.0, -0.4)
+            recent = np.where(candidate_genres == last_genre, 0.8, 0.0)
+            position = int(rng.choice(len(available), p=_softmax(taste + recent)))
+            item_pos = available.pop(position)
+            matches_taste = item_genres[item_pos] == favorite_genres[user_pos]
+            noisy_rating = (4.7 if matches_taste else 2.8) + rng.normal(0, 0.6)
+            rating = int(np.clip(np.rint(noisy_rating), 1, 5))
+            rows.append({
+                "user_id": user_id,
+                "item_id": items.iloc[item_pos]["item_id"],
+                "rating": rating,
+                "timestamp": step * n_users + user_pos + 1,
+            })
+            last_genre = int(item_genres[item_pos])
+    interactions = pd.DataFrame(rows).sort_values("timestamp").reset_index(drop=True)
+    return users, items, interactions

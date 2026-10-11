@@ -109,3 +109,31 @@ def evaluate_at_k(
         "ndcg": float(frame["ndcg"].mean()),
         "n_users": int(len(frame)),
     }
+
+
+def catalog_coverage(recommendation_lists: list[list[str]], catalog_ids) -> float:
+    """Fraction of the supplied catalog recommended at least once."""
+
+    catalog = set(catalog_ids)
+    if not catalog:
+        return 0.0
+    recommended = {item for items in recommendation_lists for item in items}
+    return len(recommended & catalog) / len(catalog)
+
+
+def intra_list_diversity(item_features: np.ndarray) -> float:
+    """Mean pairwise cosine distance on the features of one ranked list.
+
+    Features define what diversity means. TF-IDF distance is not satisfaction.
+    """
+
+    values = np.asarray(item_features, dtype=float)
+    if values.ndim != 2 or not np.isfinite(values).all():
+        raise ValueError("features must be a finite two-dimensional array")
+    if len(values) < 2:
+        return 0.0
+    norms = np.linalg.norm(values, axis=1, keepdims=True)
+    normalized = np.divide(values, norms, out=np.zeros_like(values), where=norms > 0)
+    similarity = normalized @ normalized.T
+    upper = np.triu_indices(len(values), k=1)
+    return float(np.clip(1 - similarity[upper], 0, 2).mean())
