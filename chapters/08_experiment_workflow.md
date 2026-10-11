@@ -108,4 +108,4 @@ testの結果を何度も見て設定を選ぶと、そのtestに合う設定を
 2. [run.py](../recsys_lab/run.py) の評価・サンプル推薦の `k=5` を3、5、10に変え、対応する表示見出しもそろえて結果を比べてください。
 3. 指標が高いのに、推薦リストが直感的に悪く見える例を探してください。
 
-[回答例](../answers/08_experiment_workflow_answers.md) / [教材の入口へ](../README.md)
+[回答例](../answers/08_experiment_workflow_answers.md) / [教材の入口へ](../README.md) / 次へ：[9章：モダンな推薦の全体像](09_modern_landscape.md)

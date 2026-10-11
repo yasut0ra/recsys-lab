@@ -93,3 +93,63 @@ flowchart TD
 ```
 
 実験メモのひな形は[8章](chapters/08_experiment_workflow.md)にあります。
+
+## 発展編の手法と実装
+
+| 手法 | 一言でいうと | 本教材の実装・読む章 |
+| --- | --- | --- |
+| 内容ベース / TF-IDF | 説明が好みに近い作品を探す | `ContentBasedRecommender`：[10章](chapters/10_content_hybrid.md) |
+| ハイブリッド / RRF | 複数のモデルの順位を混ぜる | `HybridRRFRecommender`：[10章](chapters/10_content_hybrid.md) |
+| implicit ALS | 行動を重み付きの表として近似する | `ImplicitALSRecommender`：[11章](chapters/11_strong_baselines.md) |
+| EASE | 履歴から別の作品への反応を線形に復元する | `EASERecommender`：[11章](chapters/11_strong_baselines.md) |
+| Two-Tower | 人と作品を別々の数の組に変え、相性を比べる | `LinearTwoTowerRecommender`：[12章](chapters/12_two_tower_retrieval.md) |
+| FM・DeepFM・DCN・DIN・MMoE | 特徴の組み合わせや複数の目標を使って並べる | 図解と特徴交差の計算：[13章](chapters/13_feature_ranking.md) |
+| 遷移モデル | 最後に好んだ作品から、次に好まれる作品を数える | `TransitionRecommender`：[14章](chapters/14_sequential_recommendation.md) |
+| SASRec・BERT4Rec | attentionで履歴の順番や関係を学ぶ | 図解とattentionの計算：[14章](chapters/14_sequential_recommendation.md) |
+| LightGCN | 人と作品のつながりに沿って数の組を混ぜる | `LightGCNRecommender`：[15章](chapters/15_graph_recommendation.md) |
+| SGL・SimGCL | 変化を加えた見方を照らし合わせて学ぶ | 図解：[15章](chapters/15_graph_recommendation.md) |
+| Mult-VAE・DiffRec | 履歴の分布やノイズから反応を復元する | 図解と分布・ノイズの計算：[16章](chapters/16_vae_diffusion.md) |
+| TIGER | 作品を短い符号にし、符号を順番に生成する | 図解と有効な符号の制約：[17章](chapters/17_generative_recommendation.md) |
+| HSTU | 大規模な行動列から次の対象を学ぶ | 図解：[17章](chapters/17_generative_recommendation.md) |
+| LLM・マルチモーダル | 言葉・画像・会話を推薦の手がかりにする | P5・CLIPの図解と融合の計算：[18章](chapters/18_llm_multimodal.md) |
+| MMR | 相性と、すでに選んだ作品との重複を考える | `rerank_mmr`：[19章](chapters/19_reranking_bandits.md) |
+| バンディット | よい候補の活用と、未知の候補の探索を両立する | 図解とUCBの計算：[19章](chapters/19_reranking_bandits.md) |
+
+発展モデルは [modern_models.py](recsys_lab/modern_models.py)、MMRは [reranking.py](recsys_lab/reranking.py) にあります。図解のみのモデルは `make modern` には入っていません。線形Two-Towerは小さな線形モデル、遷移モデルは1次の比較基準です。
+
+## 検索・学習の言葉
+
+| 用語 | やさしく言うと | 読む章 |
+| --- | --- | --- |
+| retrieval / 候補検索 | 多くの作品から、詳しく比べる候補を拾う | [9章](chapters/09_modern_landscape.md) |
+| ranking / ランキング | 候補に相性の点数をつけて並べる | [13章](chapters/13_feature_ranking.md) |
+| reranking / 再ランキング | 多様性や表示条件を考えて最終リストを整える | [19章](chapters/19_reranking_bandits.md) |
+| embedding / 埋め込み | 学習して作る数の組。近さや相性を計算できる | [12章](chapters/12_two_tower_retrieval.md) |
+| ANN | 近いベクトルを、近似して速く探す検索 | [12章](chapters/12_two_tower_retrieval.md) |
+| in-batch negative | 同じ学習の組にある別の正例を比較相手として使う | [12章](chapters/12_two_tower_retrieval.md) |
+| feature cross / 特徴交差 | 「人の属性 × 作品の属性」の組み合わせ | [13章](chapters/13_feature_ranking.md) |
+| impression / 表示記録 | どの候補を、誰に、いつ、どの位置で出したか | [13章](chapters/13_feature_ranking.md) |
+| attention | 履歴のどこをどれくらい参考にするかを計算する | [14章](chapters/14_sequential_recommendation.md) |
+| causal mask | 未来の行動を見られないようにする制約 | [14章](chapters/14_sequential_recommendation.md) |
+| contrastive learning / 対照学習 | 関連する見方を近づけ、比較相手から区別する学習 | [15章](chapters/15_graph_recommendation.md) |
+| Semantic ID | 内容のベクトルなどから作る、作品を表す符号列 | [17章](chapters/17_generative_recommendation.md) |
+| constrained decoding | 存在する作品など、条件に合う出力だけを生成する | [17章](chapters/17_generative_recommendation.md) |
+| multimodal / マルチモーダル | 言葉、画像、音など複数の種類の情報を扱う | [18章](chapters/18_llm_multimodal.md) |
+| exploitation / exploration | よさそうな候補の活用 / まだよく知らない候補の探索 | [19章](chapters/19_reranking_bandits.md) |
+
+## 発展編の評価の言葉
+
+| 用語 | やさしく言うと | 注意点 |
+| --- | --- | --- |
+| validation / 検証用データ | 設定を選ぶために隠す記録 | 設定を決めた後にtestで最終確認する |
+| temporal split / 時間順の分割 | 過去で学び、後の記録を予測する分け方 | ユーザーごとの分割と全員共通の時刻での分割は違う |
+| leakage / 情報の漏れ | 予測時に知らないはずの情報を使ってしまうこと | 特徴の作成時刻も確認する |
+| coverage / カバー率 | 全作品のうち、誰かへの推薦に出た作品の割合 | 人数やK、候補集合とともに記録する |
+| intra-list diversity | リスト内の作品の違いの大きさ | 何の特徴で違いを測ったかで変わる |
+| propensity / 露出確率 | ある状況で、その作品を表示した確率 | クリック率とは違う |
+| IPS | 露出確率を使い、観測の偏りを補正する推定 | 低い確率ではばらつきが大きい。未露出の対象は補えない |
+| A/B test | ユーザーを分け、実際の反応を比較する実験 | オフラインの指標だけでは利用体験を断定できない |
+| ablation | 構成要素を外し、何が効いたかを調べる比較 | 同じデータ・分割・候補で比べる |
+| p95 latency | 処理の95%が収まる時間 | 平均時間だけでは遅いリクエストを見落とす |
+
+具体的な落とし穴は[20章](chapters/20_evaluation_serving.md)、9構成の比較とCSV保存は[21章](chapters/21_capstone.md)、原資料は[参考文献](READING_LIST.md)へ。
