@@ -1,70 +1,99 @@
-# recsys-lab
+# recsys-lab — 図と小さな例で学ぶ「おすすめ」のしくみ
 
-Python だけで推薦システムの基礎を実装しながら学ぶための小さな教材リポジトリです。
+動画サービスの「あなたへのおすすめ」は、どうやって選ばれているのでしょうか。
+この教材では、映画を例に、**記録を集める → おすすめを選ぶ → 当たったか確かめる**という流れを学びます。
 
-外部ライブラリは最小限にし、`numpy` / `pandas` / `scikit-learn` だけを使います。実装はあえて読みやすさを優先し、推薦アルゴリズムの各ステップが追えるようにしています。
+推薦システムを初めて学ぶ人向けです。まずは図と例だけを読んで大丈夫です。数式は補足にまとめています。コードを動かす段階では、Python の変数・リスト・関数を少し知っていると読み進めやすくなります。
 
-## できること
+## まず、何をするしくみ？
 
-- 小さな擬似データセット生成
-- 人気順推薦
-- ユーザーベース協調フィルタリング
-- アイテムベース協調フィルタリング
-- 行列分解による推薦
-- implicit feedback の扱い
-- `Precision@K` / `Recall@K` / `NDCG@K` による評価
-- ユーザー単位の train/test split
-- 各章ごとの exercises と answers
+「推薦（すいせん）」は、たくさんの候補から、その人が気に入りそうなものを選ぶことです。
 
-## セットアップ
+```mermaid
+flowchart LR
+    A[これまでの記録<br/>どの映画を見た？<br/>何点をつけた？] --> B[おすすめを選ぶ<br/>人気や好みの似かたを使う]
+    B --> C[まだ見ていない映画<br/>おすすめ上位3件]
+    C --> D[答え合わせ<br/>気に入った映画を当てられた？]
+```
+
+図の詳しい内容は、本文にも書いてあります。図が表示されない環境でも、例の表と説明で学べます。
+
+## 自分に合った入口から始めよう
+
+| やりたいこと | 読む順番 |
+| --- | --- |
+| まず「おすすめ」のしくみを知りたい | [0章：映画3本でつかむ全体像](chapters/00_start_here.md) → [3章：人気順推薦](chapters/03_popularity.md) |
+| データと答え合わせを理解したい | [1章：記録を表にする](chapters/01_dataset.md) → [2章：おすすめを採点する](chapters/02_evaluation.md) |
+| 自分の好みに合うおすすめを知りたい | [4章：似ている人を探す](chapters/04_user_based_cf.md) → [5章：似ている映画を探す](chapters/05_item_based_cf.md) |
+| 学習するモデルや実験に進みたい | [6章：好みを数の組で表す](chapters/06_matrix_factorization.md) → [7章：クリックから学ぶ](chapters/07_implicit_feedback.md) → [8章：公平に比べる](chapters/08_experiment_workflow.md) |
+
+各章は「この章のゴール → 身近な例と図 → 小さな計算・コード → 練習」の順に読めます。用語を忘れたら、[用語としくみの早見表](CHEATSHEET.md)へ戻ってください。
+
+## おすすめの選び方を、一言で比べる
+
+| 手法 | どう考える？ | 身近なたとえ |
+| --- | --- | --- |
+| 人気順推薦 | 多くの人が見たものを選ぶ | お店の売れ筋ランキング |
+| ユーザーベース協調フィルタリング | 好みの似た人の評価を参考にする | 趣味の合う友達に聞く |
+| アイテムベース協調フィルタリング | 評価した作品と似たものを探す | 「この映画が好きな人はこちらも」 |
+| 行列分解 | 人と作品の相性を、学習した数の組で表す | 好みと作品の特徴を照らし合わせる |
+| BPR | 好きという手がかりのある作品を、比較相手より上に並べる | 星の点数より、おすすめの順番を練習する |
+
+「協調フィルタリング」は、ほかの人の評価を手がかりに候補を絞る方法です。「アイテム」は、おすすめする対象。この教材では映画のつもりで読めます。
+
+## 動かしてみよう
+
+Python 3.10 以上と `make` を使います。ターミナルで、このリポジトリのフォルダーを開いて実行してください。
 
 ```bash
 make init
-```
-
-## デモ実行
-
-```bash
 make run
 ```
 
-`make run` は擬似データを生成し、同じ train/test split 上で複数の推薦手法を評価します。
+- `make init`：教材用の Python 環境 `.venv` を作り、必要なライブラリを入れます。最初に1回実行します。
+- `make run`：練習用の記録を作り、5つの手法でおすすめを出して採点します。
 
-## テスト
+`make` が使えない場合は、同じ処理を次のように実行できます（macOS / Linux）。
 
 ```bash
-make check
+python3 -m venv .venv
+.venv/bin/python -m pip install -r requirements.txt
+.venv/bin/python -m recsys_lab.run
 ```
 
-## リポジトリ構成
+章の Python コードも、このフォルダーで `.venv` の Python を使って実行してください。ターミナルで `.venv/bin/python` と入力すると、コードを試せる対話モードが開きます。
+
+### 結果はどこを見ればいい？
+
+| 表示 | やさしく言うと |
+| --- | --- |
+| `users` / `items` / `interactions` | 人数 / 作品数 / 評価の記録数 |
+| `train/test` | おすすめを作るための記録数 / 答え合わせ用に隠した記録数 |
+| `Evaluation @ 5` | 上位5件のおすすめを採点した結果 |
+| `precision` | おすすめ5枠のうち、何割が当たり？ |
+| `recall` | 隠した当たり作品のうち、何割を見つけた？ |
+| `ndcg` | 当たり作品を、上の順位に出せた？ |
+| `n_users` | 答え合わせに使った人数 |
+| `Sample recommendations` | 1人に対する実際のおすすめリスト |
+
+ここでの「当たり」は、隠した記録のうち4点以上の作品です。未評価の作品が好きかどうかはわからないので、現実の好みを完全に採点できるわけではありません。
+
+データは練習用に作ったものです。表示される `Item 001` などは架空の作品名で、本文に出てくる「映画A」なども説明用の例です。
+
+## ファイルの案内
 
 ```text
 .
-├── recsys_lab/          # 教材用の実装
-├── chapters/            # 章ごとの解説と exercises
-├── answers/             # 章ごとの回答例
-├── tests/               # make check 用の軽量テスト
-├── README.md
-├── CHEATSHEET.md
-├── Makefile
+├── chapters/       # 0章から8章までの図解・例・練習問題
+├── answers/        # 1章から8章までの回答例
+├── recsys_lab/     # 実際に動く Python の実装
+├── tests/          # 実装の動作確認
+├── README.md       # この教材の入口
+├── CHEATSHEET.md   # 用語としくみの早見表
+├── Makefile        # セットアップ・実行のコマンド
 └── requirements.txt
 ```
 
-## 学習順
+実装を読みたくなったら、[データ生成](recsys_lab/data.py)、[記録の分割](recsys_lab/split.py)、[採点](recsys_lab/metrics.py)、[おすすめの手法](recsys_lab/models.py)、[デモ全体](recsys_lab/run.py)へ進んでください。
 
-1. [擬似データセット](chapters/01_dataset.md)
-2. [train/test split と評価](chapters/02_evaluation.md)
-3. [人気順推薦](chapters/03_popularity.md)
-4. [ユーザーベース協調フィルタリング](chapters/04_user_based_cf.md)
-5. [アイテムベース協調フィルタリング](chapters/05_item_based_cf.md)
-6. [行列分解](chapters/06_matrix_factorization.md)
-7. [implicit feedback](chapters/07_implicit_feedback.md)
-8. [実験の進め方](chapters/08_experiment_workflow.md)
-
-## 実装の入口
-
-- データ生成: [recsys_lab/data.py](recsys_lab/data.py)
-- 分割: [recsys_lab/split.py](recsys_lab/split.py)
-- 評価指標: [recsys_lab/metrics.py](recsys_lab/metrics.py)
-- 推薦モデル: [recsys_lab/models.py](recsys_lab/models.py)
-- デモ実行: [recsys_lab/run.py](recsys_lab/run.py)
+動作確認は `make check` で実行できます。
